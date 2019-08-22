@@ -60,6 +60,7 @@ final class GoogleMapController
         OnMapReadyCallback,
         GoogleMap.OnMapClickListener,
         GoogleMap.OnMapLongClickListener,
+        GoogleMap.OnMarkerDragListener,
         PlatformView {
 
   private static final String TAG = "GoogleMapController";
@@ -177,6 +178,7 @@ final class GoogleMapController
     googleMap.setOnCameraMoveListener(this);
     googleMap.setOnCameraIdleListener(this);
     googleMap.setOnMarkerClickListener(this);
+    googleMap.setOnMarkerDragListener(this);
     googleMap.setOnPolygonClickListener(this);
     googleMap.setOnPolylineClickListener(this);
     googleMap.setOnCircleClickListener(this);
@@ -287,6 +289,11 @@ final class GoogleMapController
           result.success(googleMap.getUiSettings().isCompassEnabled());
           break;
         }
+      case "map#isMapToolbarEnabled":
+        {
+          result.success(googleMap.getUiSettings().isMapToolbarEnabled());
+          break;
+        }
       case "map#getMinMaxZoomLevels":
         {
           List<Float> zoomLevels = new ArrayList<>(2);
@@ -391,6 +398,17 @@ final class GoogleMapController
   }
 
   @Override
+  public void onMarkerDragStart(Marker marker) {}
+
+  @Override
+  public void onMarkerDrag(Marker marker) {}
+
+  @Override
+  public void onMarkerDragEnd(Marker marker) {
+    markersController.onMarkerDragEnd(marker.getId(), marker.getPosition());
+  }
+
+  @Override
   public void onPolygonClick(Polygon polygon) {
     polygonsController.onPolygonTap(polygon.getId());
   }
@@ -482,6 +500,11 @@ final class GoogleMapController
   @Override
   public void setCompassEnabled(boolean compassEnabled) {
     googleMap.getUiSettings().setCompassEnabled(compassEnabled);
+  }
+
+  @Override
+  public void setMapToolbarEnabled(boolean mapToolbarEnabled) {
+    googleMap.getUiSettings().setMapToolbarEnabled(mapToolbarEnabled);
   }
 
   @Override

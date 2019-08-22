@@ -1,9 +1,30 @@
-// Copyright 2019 The Chromium Authors. All rights reserved.
+// Copyright 2019 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 #import "FLTImagePickerImageUtil.h"
 #import <MobileCoreServices/MobileCoreServices.h>
+
+@interface GIFInfo ()
+
+@property(strong, nonatomic, readwrite) NSArray<UIImage *> *images;
+@property(assign, nonatomic, readwrite) NSTimeInterval interval;
+
+@end
+
+@implementation GIFInfo
+
+- (instancetype)initWithImages:(NSArray<UIImage *> *)images interval:(NSTimeInterval)interval;
+{
+  self = [super init];
+  if (self) {
+    self.images = images;
+    self.interval = interval;
+  }
+  return self;
+}
+
+@end
 
 @implementation FLTImagePickerImageUtil : NSObject
 
@@ -48,18 +69,24 @@
     }
   }
 
+  // Scaling the image always rotate itself based on the current imageOrientation of the original
+  // Image. Set to orientationUp for the orignal image before scaling, so the scaled image doesn't
+  // mess up with the pixels.
+  UIImage *imageToScale = [UIImage imageWithCGImage:image.CGImage
+                                              scale:1
+                                        orientation:UIImageOrientationUp];
+
   UIGraphicsBeginImageContextWithOptions(CGSizeMake(width, height), NO, 1.0);
-  [image drawInRect:CGRectMake(0, 0, width, height)];
+  [imageToScale drawInRect:CGRectMake(0, 0, width, height)];
 
   UIImage *scaledImage = UIGraphicsGetImageFromCurrentImageContext();
   UIGraphicsEndImageContext();
-
   return scaledImage;
 }
 
-+ (GIFInfo)scaledGIFImage:(NSData *)data
-                 maxWidth:(NSNumber *)maxWidth
-                maxHeight:(NSNumber *)maxHeight {
++ (GIFInfo *)scaledGIFImage:(NSData *)data
+                   maxWidth:(NSNumber *)maxWidth
+                  maxHeight:(NSNumber *)maxHeight {
   NSMutableDictionary<NSString *, id> *options = [NSMutableDictionary dictionary];
   options[(NSString *)kCGImageSourceShouldCache] = @(YES);
   options[(NSString *)kCGImageSourceTypeIdentifierHint] = (NSString *)kUTTypeGIF;
@@ -98,9 +125,7 @@
 
   CFRelease(imageSource);
 
-  GIFInfo info;
-  info.images = images;
-  info.interval = interval;
+  GIFInfo *info = [[GIFInfo alloc] initWithImages:images interval:interval];
 
   return info;
 }
